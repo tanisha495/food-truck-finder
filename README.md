@@ -1,97 +1,227 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Food Truck Finder Mobile
 
-# Getting Started
+Food Truck Finder is a React Native mobile application that helps users discover nearby food trucks, check their open status, view menus and schedules, save favorite trucks, and manage their profile and location settings.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+The app is built as a customer-facing mobile experience for food truck discovery. It combines location services, map-based browsing, Supabase authentication, Supabase database queries, and reusable React Native UI components.
 
-## Step 1: Start Metro
+## Project Overview
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Food trucks often change location and operating hours, which makes it difficult for customers to know where to find them. This app solves that problem by showing nearby active trucks on a map and giving users important details such as cuisine, schedule, menu, distance, and directions.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+The main goal of the project is to make food truck discovery simple, location-aware, and mobile-friendly.
 
-```sh
-# Using npm
-npm start
+## Key Features
 
-# OR using Yarn
-yarn start
+- User onboarding flow
+- Location permission request and location status handling
+- Email/password sign in and sign up with Supabase
+- Session persistence using AsyncStorage
+- Map-based food truck discovery
+- Search by truck name, cuisine, and cuisine tags
+- Distance and cuisine filters
+- Open/closed status based on live status and schedule timing
+- Truck detail page with description, schedule, menu, and directions
+- Favorite trucks saved per authenticated user
+- Alerts for new trucks, opening soon, and closing soon updates
+- Profile page with avatar upload, edit name, password reset, and sign out
+- Privacy and location settings screen
+- Reusable components for buttons, inputs, cards, badges, and navigation
+
+## Tech Stack
+
+- React Native 0.86
+- React 19
+- TypeScript
+- React Navigation
+- Supabase Auth
+- Supabase Database
+- Supabase Storage
+- React Native Maps
+- React Native Geolocation
+- React Native Image Picker
+- AsyncStorage
+- Jest
+
+## How The App Works
+
+1. The app starts from `App.tsx`.
+2. `AppNavigator` defines the stack navigation and bottom tab navigation.
+3. `SplashScreen` checks whether a Supabase auth session already exists.
+4. If the user is logged in, the app opens the main tab navigator.
+5. If the user is not logged in, the app shows onboarding, location permission, and authentication screens.
+6. The main app tabs are Explore, Favorites, Alerts, and Profile.
+7. Explore fetches food truck data, applies search/filter logic, and displays trucks on a map.
+8. Truck Detail shows menu, schedule, favorite action, and directions.
+
+## Core Business Logic
+
+The most important logic is deciding whether a food truck should appear as open.
+
+A truck is considered open only when:
+
+- the truck is marked live
+- the truck is not suspended
+- the truck has a valid schedule stop
+- the schedule stop is active for the current day/date and current time
+- the truck has valid coordinates
+
+This is better than relying only on an `is_live` flag, because a truck might still be marked live even after its scheduled hours have ended.
+
+Distance filtering uses the Haversine formula to calculate the distance between the user's current latitude/longitude and the truck's latitude/longitude.
+
+## Folder Structure
+
+```text
+src/
+  components/
+    cards/          Reusable card components
+    common/         Shared UI components
+    navigation/     Custom navigation UI
+  constants/        Colors, spacing, typography, and theme values
+  data/             Static sample/fallback data
+  navigation/       App navigator, route types, and navigation helpers
+  screens/          App screens
+  services/         Supabase, auth, trucks, favorites, alerts, profile, and location logic
+  store/            Local store utilities
+  types/            Shared TypeScript types
+  utils/            Schedule and open-status helpers
 ```
 
-## Step 2: Build and run your app
+## Important Screens
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+- `SplashScreen` checks the auth session and decides the first route.
+- `OnboardingScreen` introduces the app.
+- `LocationPermissionScreen` asks for device location access.
+- `SignInScreen` handles email/password login.
+- `SignUpScreen` handles account creation.
+- `ExploreScreen` shows nearby trucks on the map and handles search/filtering.
+- `FiltersScreen` lets users select distance and cuisine filters.
+- `TruckDetailScreen` shows menu, schedule, status, directions, and favorite action.
+- `FavoritesScreen` shows the user's saved trucks.
+- `AlertsScreen` shows stored and dynamic truck alerts.
+- `ProfileScreen` manages account options and sign out.
+- `PrivacyLocationScreen` shows location permission status and actions.
 
-### Android
+## Backend / Supabase Usage
 
-```sh
-# Using npm
-npm run android
+The app uses Supabase for:
 
-# OR using Yarn
-yarn android
+- authentication
+- persisted user sessions
+- profile data
+- food truck data
+- schedule stops
+- menu items
+- favorite trucks
+- alerts
+- avatar storage
+
+Expected Supabase tables include:
+
+- `profiles`
+- `trucks`
+- `schedule_stops`
+- `menu_items`
+- `favorite_trucks`
+- `alerts`
+
+The app also expects an `avatars` storage bucket for profile photos.
+
+## Environment Variables
+
+Create a local `.env` file in the project root.
+
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
 
-### iOS
+Do not commit the real `.env` file.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+For GitHub, commit only a safe `.env.example` file with placeholder values:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+```
+
+## Security Notes
+
+Do not commit:
+
+- `.env`
+- `.env.local`
+- Android signing files such as `.jks` or `.keystore`
+- `android/local.properties`
+- private API keys
+- Supabase service role keys
+
+Only the Supabase anon key should be used in the mobile app. A Supabase service role key must never be placed in a client-side mobile application.
+
+## Installation
+
+Install JavaScript dependencies:
+
+```sh
+npm install
+```
+
+For iOS, install CocoaPods dependencies:
 
 ```sh
 bundle install
+bundle exec pod install --project-directory=ios
 ```
 
-Then, and every time you update your native dependencies, run:
+## Running The App
+
+Start Metro:
 
 ```sh
-bundle exec pod install
+npm start
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Run on Android:
 
 ```sh
-# Using npm
+npm run android
+```
+
+Run on iOS:
+
+```sh
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Available Scripts
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```sh
+npm start        # Start Metro bundler
+npm run android  # Build and run Android app
+npm run ios      # Build and run iOS app
+npm run lint     # Run ESLint
+npm test         # Run Jest tests
+```
 
-## Step 3: Modify your app
+## Known Limitations
 
-Now that you have successfully run the app, let's make changes!
+- Google and Apple authentication buttons are placeholders.
+- Password reset email is implemented, but full mobile deep-link recovery handling needs production testing.
+- Push notifications are not fully implemented.
+- Automated test coverage is currently limited.
+- Realtime updates can be improved with Supabase realtime subscriptions.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Future Improvements
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+- Add Google and Apple authentication
+- Add push notifications for favorite trucks and closing-soon alerts
+- Add Supabase realtime subscriptions for live truck status updates
+- Add stronger offline support and no-location fallback behavior
+- Add more tests for schedule logic, filtering, favorites, and auth flows
+- Improve production release setup for Android and iOS
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+## Interview Summary
 
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Food Truck Finder is a React Native and TypeScript mobile app that helps users find nearby food trucks. It uses Supabase for authentication, database access, and storage. The core feature is the Explore screen, where users can view nearby active trucks on a map, search and filter them, and open a detail page. The app uses schedule-aware logic so trucks are shown as open only when they are live and currently active according to their schedule.
